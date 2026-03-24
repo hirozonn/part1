@@ -26,6 +26,11 @@ async function createAdmin() {
     process.exit(1)
   }
 
+  if (adminPassword.length < 8) {
+    console.error('ADMIN_PASSWORD は8文字以上で設定してください')
+    process.exit(1)
+  }
+
   const supabase = createClient(supabaseUrl, serviceRoleKey)
 
   console.log(`管理者アカウントを作成中: ${adminEmail}`)
@@ -49,7 +54,7 @@ async function createAdmin() {
     process.exit(1)
   }
 
-  console.log('✅ 管理者アカウントが作成されました:', data)
+  console.log('✅ 管理者アカウントが作成・更新されました:', data)
 }
 
 createAdmin()

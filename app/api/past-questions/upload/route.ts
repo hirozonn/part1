@@ -19,8 +19,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'ファイルが選択されていません' }, { status: 400 })
     }
 
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
-    if (!allowedTypes.includes(file.type)) {
+    // Map each allowed MIME type to its valid file extensions.
+    // This prevents clients from spoofing Content-Type to bypass the type check.
+    const MIME_TO_EXTENSIONS: Record<string, string[]> = {
+      'application/pdf': ['pdf'],
+      'image/jpeg': ['jpg', 'jpeg'],
+      'image/png': ['png'],
+      'image/webp': ['webp'],
+    }
+
+    if (!MIME_TO_EXTENSIONS[file.type]) {
       return NextResponse.json(
         { error: 'PDF、JPEG、PNG、WebP形式のファイルのみアップロードできます' },
         { status: 400 }
@@ -32,8 +40,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'ファイルサイズは10MB以下にしてください' }, { status: 400 })
     }
 
-    const ext = file.name.split('.').pop()
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`
+    // Validate that the file extension is consistent with the declared MIME type.
+    const rawExt = file.name.split('.').pop()?.toLowerCase() ?? ''
+    const allowedExtsForType = MIME_TO_EXTENSIONS[file.type]
+    if (!allowedExtsForType.includes(rawExt)) {
+      return NextResponse.json(
+        { error: 'ファイルの拡張子と形式が一致しません' },
+        { status: 400 }
+      )
+    }
+
+    // Use the validated extension (not the raw client value) to build the storage path.
+    const fileName = `${crypto.randomUUID()}.${rawExt}`
     const filePath = `past-questions/${fileName}`
 
     const arrayBuffer = await file.arrayBuffer()

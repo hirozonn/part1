@@ -77,34 +77,27 @@ ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE past_questions ENABLE ROW LEVEL SECURITY;
 
--- Allow service role to bypass RLS (used by our API routes)
--- These policies are for direct client access if needed
+-- The service role bypasses RLS automatically and is used exclusively by
+-- server-side API routes (supabaseAdmin). No permissive "FOR ALL" policies
+-- are defined here so that direct anon/authenticated client access is denied
+-- by default for write operations.
 
 -- Users policies
-CREATE POLICY "Service role can manage all users"
-  ON users FOR ALL
-  USING (true)
-  WITH CHECK (true);
+-- No client-facing policies: all user operations go through the service role
+-- API routes. Direct anon or authenticated access to the users table is denied.
 
 -- Categories policies
 CREATE POLICY "Anyone can read categories"
   ON categories FOR SELECT
   USING (true);
 
-CREATE POLICY "Service role can manage categories"
-  ON categories FOR ALL
-  USING (true)
-  WITH CHECK (true);
-
 -- Past questions policies
-CREATE POLICY "Anyone can read past questions"
+-- Only authenticated users may read past questions directly; write operations
+-- are handled exclusively by the service role API routes.
+CREATE POLICY "Authenticated users can read past questions"
   ON past_questions FOR SELECT
+  TO authenticated
   USING (true);
-
-CREATE POLICY "Service role can manage past questions"
-  ON past_questions FOR ALL
-  USING (true)
-  WITH CHECK (true);
 
 -- ============================================================
 -- Supabase Storage bucket
